@@ -37,6 +37,26 @@ The fp32 path should show `sqrt.rn.f32` with no `.ftz`.
 | bf16 | fma | 3.311 | 3.311 | 1.00x |
 | bf16 | sqrt | 7.209 | 7.330 | 1.02x † |
 
+### A100-SXM4-80GB (sm_80), nvcc 12.4
+
+| format | op | normal (ms) | subnormal (ms) | ratio |
+|---|---|---|---|---|
+| fp32 | fma | 13.862 | 13.862 | 1.00x |
+| fp32 | sqrt | 22.681 | 60.316 | **2.66x** |
+| fp16 | fma | 5.755 | 5.754 | 1.00x |
+| fp16 | sqrt | 11.687 | 11.697 | 1.00x † |
+| bf16 | fma | 5.754 | 5.753 | 1.00x |
+| bf16 | sqrt | 12.928 | 13.140 | 1.02x † |
+
+### Across architectures
+
+| | fp32 fma | fp32 sqrt | fp16 fma | bf16 fma |
+|---|---|---|---|---|
+| A100 (Ampere) | 1.00x | **2.66x** | 1.00x | 1.00x |
+| H100 (Hopper) | 1.00x | **3.44x** | 1.00x | 1.00x |
+
+The subnormal square-root penalty is larger on Hopper than on Ampere.
+
 † not a valid measurement, see below.
 
 ## Notes
@@ -44,7 +64,7 @@ The fp32 path should show `sqrt.rn.f32` with no `.ftz`.
 **FMA has no subnormal penalty.** In all three formats the two timings are identical
 to three decimal places, not merely close.
 
-**fp32 square root costs 3.44x.** The sqrt loop also contains one FMA per iteration,
+**fp32 square root costs 2.66x on Ampere and 3.44x on Hopper.** The sqrt loop also contains one FMA per iteration,
 so this is a blended figure. Backing the FMA out puts the isolated sqrt penalty at
 roughly 3.67x.
 
@@ -70,4 +90,4 @@ are genuinely subnormal in each format.
 
 ## Still to run
 
-A100 (sm_80) and RTX 4090 (sm_89), to see whether the 3.44x holds across generations.
+RTX 4090 (sm_89), to see whether the Ampere to Hopper increase is a trend or specific to Hopper.
