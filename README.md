@@ -48,14 +48,28 @@ The fp32 path should show `sqrt.rn.f32` with no `.ftz`.
 | bf16 | fma | 5.754 | 5.753 | 1.00x |
 | bf16 | sqrt | 12.928 | 13.140 | 1.02x † |
 
+### B200 (sm_100)
+
+| format | op | normal (ms) | subnormal (ms) | ratio |
+|---|---|---|---|---|
+| fp32 | fma | 2.934 | 2.934 | 1.00x |
+| fp32 | sqrt | 8.719 | 29.627 | **3.40x** |
+| fp16 | fma | 2.934 | 2.933 | 1.00x |
+| fp16 | sqrt | 5.937 | 5.939 | 1.00x † |
+| bf16 | fma | 2.934 | 2.934 | 1.00x |
+| bf16 | sqrt | 6.685 | 6.771 | 1.01x † |
+
 ### Across architectures
 
 | | fp32 fma | fp32 sqrt | fp16 fma | bf16 fma |
 |---|---|---|---|---|
 | A100 (Ampere) | 1.00x | **2.66x** | 1.00x | 1.00x |
 | H100 (Hopper) | 1.00x | **3.44x** | 1.00x | 1.00x |
+| B200 (Blackwell) | 1.00x | **3.40x** | 1.00x | 1.00x |
 
-The subnormal square-root penalty is larger on Hopper than on Ampere.
+Fused multiply-add has no subnormal penalty on any of the three, in any format.
+The square-root penalty steps up between Ampere and Hopper and then holds, rather
+than growing steadily with each generation.
 
 † not a valid measurement, see below.
 
@@ -64,7 +78,7 @@ The subnormal square-root penalty is larger on Hopper than on Ampere.
 **FMA has no subnormal penalty.** In all three formats the two timings are identical
 to three decimal places, not merely close.
 
-**fp32 square root costs 2.66x on Ampere and 3.44x on Hopper.** The sqrt loop also contains one FMA per iteration,
+**fp32 square root costs 2.66x on Ampere, 3.44x on Hopper and 3.40x on Blackwell.** The sqrt loop also contains one FMA per iteration,
 so this is a blended figure. Backing the FMA out puts the isolated sqrt penalty at
 roughly 3.67x.
 
@@ -90,4 +104,4 @@ are genuinely subnormal in each format.
 
 ## Still to run
 
-RTX 4090 (sm_89), to see whether the Ampere to Hopper increase is a trend or specific to Hopper.
+RTX 4090 (sm_89) would fill in Ada between Ampere and Hopper.
