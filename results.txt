@@ -1,0 +1,74 @@
+=== gpu-subnormal-bench, raw output ===
+benchmark: https://github.com/jessiedong01/gpu-subnormal-bench
+build:  nvcc -O3 -arch=sm_XX -ftz=false -prec-sqrt=true subnormal_bench.cu -o subnormal_bench
+100,000 iterations, 1024 blocks x 256 threads, 5 reps averaged, timed with cuda events
+
+
+--- A100-SXM4-80GB (sm_80), nvcc 12.4, -arch=sm_80 ---
+
+NVIDIA A100-SXM4-80GB (sm_80)
+
+subnormal operands: fp32=yes fp16=yes bf16=yes
+
+fmt    op         normal    subnorm    ratio
+fp32   fma        13.862     13.862    1.00x
+fp32   sqrt       22.681     60.316    2.66x
+fp16   fma         5.755      5.754    1.00x
+fp16   sqrt       11.687     11.697    1.00x
+bf16   fma         5.754      5.753    1.00x
+bf16   sqrt       12.928     13.140    1.02x
+
+
+--- H100 80GB HBM3 (sm_90), nvcc 12.4, driver 580.126.09, -arch=sm_90 ---
+
+NVIDIA H100 80GB HBM3 (sm_90)
+
+subnormal operands: fp32=yes fp16=yes bf16=yes
+
+fmt    op         normal    subnorm    ratio
+fp32   fma         3.287      3.287    1.00x
+fp32   sqrt        9.667     33.298    3.44x
+fp16   fma         3.311      3.311    1.00x
+fp16   sqrt        6.714      6.712    1.00x
+bf16   fma         3.311      3.311    1.00x
+bf16   sqrt        7.209      7.330    1.02x
+
+ptx check (sqrt opcodes emitted):
+     32 sqrt.approx.f32
+     16 sqrt.approx.ftz.f32
+     32 sqrt.rn.f32
+
+
+--- B200 (sm_100), -arch=sm_100 ---
+
+NVIDIA B200 (sm_100)
+
+subnormal operands: fp32=yes fp16=yes bf16=yes
+
+fmt    op         normal    subnorm    ratio
+fp32   fma         2.934      2.934    1.00x
+fp32   sqrt        8.719     29.627    3.40x
+fp16   fma         2.934      2.933    1.00x
+fp16   sqrt        5.937      5.939    1.00x
+bf16   fma         2.934      2.934    1.00x
+bf16   sqrt        6.685      6.771    1.01x
+
+ptx check (sqrt opcodes emitted):
+     32 sqrt.approx.f32
+     32 sqrt.approx.ftz.f32
+     32 sqrt.rn.f32
+
+
+=== summary, ratio = subnormal / normal ===
+
+                        fp32 fma   fp32 sqrt   fp16 fma   bf16 fma
+A100    (Ampere)          1.00x      2.66x       1.00x      1.00x
+H100    (Hopper)          1.00x      3.44x       1.00x      1.00x
+B200    (Blackwell)       1.00x      3.40x       1.00x      1.00x
+
+fp16 sqrt and bf16 sqrt are omitted above: hsqrt lowers to sqrt.approx.ftz.f32,
+so subnormals are flushed before the operation runs. Those rows read ~1.00x for a
+tooling reason, not a hardware one.
+
+subnormal test operands: fp32 1e-40, bf16 1e-40, fp16 1e-6
+(fp16 subnormals start at 6.104e-05; fp32 and bf16 at 1.175e-38)
